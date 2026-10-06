@@ -30,12 +30,14 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--ink);color:var(-
 #hudroot.off{opacity:0}
 
 /* crosshair */
-#xh{left:50%;top:50%;width:0;height:0}
+#xh{left:var(--cx,50%);top:var(--cy,50%);width:0;height:0}
 #xh i{position:absolute;background:var(--hud);box-shadow:0 0 2px rgba(0,0,0,.9)}
 #xh .t,#xh .b{width:2px;height:9px;left:-1px}
 #xh .l,#xh .r{height:2px;width:9px;top:-1px}
 #xh .d{width:2px;height:2px;left:-1px;top:-1px;opacity:.8}
-#hit{left:50%;top:50%;width:0;height:0;opacity:0}
+#hit{left:var(--cx,50%);top:var(--cy,50%);width:0;height:0;opacity:0}
+body.playing #game{cursor:none}
+#aimhint{left:50%;bottom:calc(150px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);font:600 12px/1.3 var(--body);letter-spacing:.08em;color:var(--dim);background:var(--panel);padding:6px 12px;text-align:center}
 #hit i{position:absolute;width:2px;height:11px;background:#fff;left:-1px;top:-5px;box-shadow:0 0 2px #000}
 #hit i:nth-child(1){transform:rotate(45deg) translateY(-11px)}
 #hit i:nth-child(2){transform:rotate(135deg) translateY(-11px)}
@@ -52,12 +54,12 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--ink);color:var(-
 .dind::before{content:"";position:absolute;left:10px;top:0;width:100px;height:26px;border-top:5px solid var(--blood);border-radius:50% 50% 0 0/100% 100% 0 0;filter:drop-shadow(0 0 6px rgba(216,57,44,.9))}
 @keyframes dfade{0%{opacity:1}70%{opacity:.8}100%{opacity:0}}
 
-#scope{inset:0;display:none;background:radial-gradient(circle at center,transparent 0,transparent 33vmin,rgba(0,0,0,.65) 33.6vmin,#000 34.2vmin)}
+#scope{inset:0;display:none;background:radial-gradient(circle at var(--cx,50%) var(--cy,50%),transparent 0,transparent 33vmin,rgba(0,0,0,.65) 33.6vmin,#000 34.2vmin)}
 #scope.on{display:block}
 #scope::before,#scope::after{content:"";position:absolute;background:#000}
-#scope::before{left:50%;top:calc(50% - 34vmin);width:1.5px;height:68vmin;margin-left:-.75px}
-#scope::after{top:50%;left:calc(50% - 34vmin);height:1.5px;width:68vmin;margin-top:-.75px}
-#scope b{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:var(--blood);box-shadow:0 0 6px var(--blood)}
+#scope::before{left:var(--cx,50%);top:calc(var(--cy,50%) - 34vmin);width:1.5px;height:68vmin;margin-left:-.75px}
+#scope::after{top:var(--cy,50%);left:calc(var(--cx,50%) - 34vmin);height:1.5px;width:68vmin;margin-top:-.75px}
+#scope b{position:absolute;left:var(--cx,50%);top:var(--cy,50%);width:6px;height:6px;margin:-3px;border-radius:50%;background:var(--blood);box-shadow:0 0 6px var(--blood)}
 
 /* radar */
 #radarbox{left:18px;top:calc(18px + env(safe-area-inset-top,0px))}
@@ -180,6 +182,7 @@ button:focus-visible{outline:2px solid var(--hud);outline-offset:3px}
   <div class="hud" id="hpbox"><div class="lbl">Salud</div><div id="hpbar"><div id="hpfill"></div></div><div id="hpnum">100</div></div>
   <div class="hud" id="ammobox"><div id="wname">M4A1</div><div class="lbl" id="wcal">5,56×45 mm</div><div id="ammo">30<small>/ 210</small></div><div id="nades"></div></div>
   <div class="hud" id="hint" hidden></div>
+  <div class="hud" id="aimhint" hidden>Modo cursor: la mira sigue al ratón. Lleva el ratón al borde para girar.</div>
   <div class="hud" id="announce"><div class="big" id="annbig">OLEADA 1</div><div class="sub" id="annsub">Hostiles entrando en el sector</div></div>
 </div>
 
@@ -1373,7 +1376,7 @@ const Snd = {
 
 // ======================= PLAYER =======================
 const keys = {};
-const mouse = { l: false, r: false };
+const mouse = { l: false, r: false, x: innerWidth / 2, y: innerHeight / 2 };
 const player = {
   pos: new V3(0, 0, 46), vel: new V3(), vy: 0, grounded: true, yaw: 0, pitch: 0,
   eye: 1.65, crouch: false, sprint: false, hp: 100, lastHit: -99, slideT: 0, slideDir: new V3(),
@@ -2334,7 +2337,10 @@ function fire(t) {
   if (s.mag <= 0) { Snd.click(2200, .2); W.fireT = .25; if (s.reserve > 0) startReload(); return; }
   s.mag--;
   W.fireT = 60 / w.rpm;
-  camera.getWorldDirection(fwdV); rightV.set(1, 0, 0).applyQuaternion(camera.quaternion); upV.set(0, 1, 0).applyQuaternion(camera.quaternion);
+  camera.updateMatrixWorld();
+  const ndc = aimNDC();
+  raycaster.setFromCamera(ndc, camera); fwdV.copy(raycaster.ray.direction);
+  rightV.crossVectors(fwdV, camera.up).normalize(); upV.crossVectors(rightV, fwdV).normalize();
   const spread = currentSpread();
   const scoped = w.scope && W.ads > .9;
   const origin = camera.position.clone();
@@ -2424,7 +2430,7 @@ document.addEventListener('keydown', e => {
     case 'Space':
       if (player.grounded) { player.vy = 6.2; player.grounded = false; player.crouch = false; player.slideT = 0; }
       break;
-    case 'Escape': case 'KeyP': if (noLock) pause(); break;
+    case 'Escape': case 'KeyP': if (!locked()) pause(); break;
     case 'KeyF': if (document.fullscreenElement) fullscreen(false); else { fullscreen(true); setTimeout(() => { if (state === 'playing') lock(); }, 150); } break;
   }
 });
@@ -2437,9 +2443,14 @@ canvas.addEventListener('mousedown', e => {
 });
 window.addEventListener('mouseup', e => { if (e.button === 0) { mouse.l = false; W.trigger = false; } if (e.button === 2) mouse.r = false; });
 window.addEventListener('contextmenu', e => e.preventDefault());
+function locked() { return document.pointerLockElement === canvas; }
+function cursorAim() { return state === 'playing' && !locked(); }
+// screen position of the aim point in normalized device coords (center when the mouse is captured)
+function aimNDC() { return cursorAim() ? { x: mouse.x / innerWidth * 2 - 1, y: -(mouse.y / innerHeight * 2 - 1) } : { x: 0, y: 0 }; }
 window.addEventListener('mousemove', e => {
+  mouse.x = e.clientX; mouse.y = e.clientY;
   if (state !== 'playing' || player.dead) return;
-  if (!noLock && document.pointerLockElement !== canvas) return;
+  if (!locked()) return;
   const w = cw();
   const zoom = lerp(1, w.fov / 78, W.ads);
   const sens = .0021 * settings.sens * zoom;
@@ -2466,9 +2477,12 @@ function updateFsLabel() { $('fs').textContent = document.fullscreenElement ? 'S
 document.addEventListener('fullscreenchange', () => { updateFsLabel(); setTimeout(resize, 50); });
 $('fs').addEventListener('click', () => fullscreen(!document.fullscreenElement));
 function lock() {
+  if (noLock) return;
   try {
-    const r = canvas.requestPointerLock();
-    if (r && r.catch) r.catch(() => { noLock = true; });
+    let r = null;
+    try { r = canvas.requestPointerLock({ unadjustedMovement: true }); } catch (e) { r = null; }
+    if (r && r.catch) r.catch(() => { try { const r2 = canvas.requestPointerLock(); if (r2 && r2.catch) r2.catch(() => { noLock = true; }); } catch (e) { noLock = true; } });
+    else if (!r) { const r2 = canvas.requestPointerLock(); if (r2 && r2.catch) r2.catch(() => { noLock = true; }); }
   } catch (e) { noLock = true; }
 }
 document.addEventListener('pointerlockchange', () => {
@@ -2695,6 +2709,7 @@ function updateWeapon(dt, t) {
   if (g.userData.slide) g.userData.slide.position.z = -.05 + W.kickZ * .9 + (s.mag === 0 ? .04 : 0);
   // dead
   if (player.dead) py -= .5;
+  if (cursorAim()) { const an = aimNDC(); ry -= an.x * .35 * (1 - a * .5); rx += an.y * .25 * (1 - a * .5); }
   vm.position.set(px, py, pz); vm.rotation.set(rx, ry, rz);
   // flash
   const scoped = !!w.scope && W.ads > .85;
@@ -2715,6 +2730,17 @@ function updateWeapon(dt, t) {
   const gap = 5 + spread * 600;
   const show = a < .3 && !player.sprint && !player.dead && W.reloadT <= 0 ? 1 - a / .3 : 0;
   hud.xh.style.opacity = show;
+  const ca = cursorAim() && !player.dead;
+  if (ca) {
+    const nx = mouse.x / innerWidth * 2 - 1, ny = mouse.y / innerHeight * 2 - 1, zone = .72;
+    const zoom = lerp(1, w.fov / 78, W.ads), turn = 2.4 * settings.sens * zoom * dt;
+    if (Math.abs(nx) > zone) player.yaw -= Math.sign(nx) * Math.min(1, (Math.abs(nx) - zone) / (1 - zone)) * turn;
+    if (Math.abs(ny) > zone) player.pitch = clamp(player.pitch - Math.sign(ny) * Math.min(1, (Math.abs(ny) - zone) / (1 - zone)) * turn * .7, -1.5, 1.5);
+  }
+  const root = document.documentElement.style;
+  const cx = ca ? mouse.x + 'px' : '50%', cy = ca ? mouse.y + 'px' : '50%';
+  if (cx !== updateWeapon.cx || cy !== updateWeapon.cy) { root.setProperty('--cx', cx); root.setProperty('--cy', cy); updateWeapon.cx = cx; updateWeapon.cy = cy; }
+  if (ca !== updateWeapon.ca) { $('aimhint').hidden = !ca; updateWeapon.ca = ca; }
   xhParts.t.style.top = (-gap - 9) + 'px'; xhParts.b.style.top = gap + 'px';
   xhParts.l.style.left = (-gap - 9) + 'px'; xhParts.r.style.left = gap + 'px';
 }
@@ -2794,7 +2820,9 @@ function updateHud(dt, t) {
 // ======================= LOOP =======================
 const clock = new THREE.Clock();
 let attractA = 0;
+let shownState = '';
 function simulate(dt) {
+  if (state !== shownState) { shownState = state; document.body.classList.toggle('playing', state === 'playing'); }
   if (state === 'playing') {
     gameTime += dt;
     updatePlayer(dt);
