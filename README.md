@@ -19,6 +19,8 @@ Shooter en primera persona estilo Call of Duty que corre en el navegador (Three.
 | F | Pantalla completa |
 | Esc | Pausa |
 
+Gráficos: en el menú puedes elegir calidad Baja, Media, Alta o Ultra (reflejos, brillo de luces, sombras suaves). Si va lento, baja la calidad.
+
 Mapas: Al-Kharif (desierto), Puerto Viejo (muelle), Base Glaciar (nieve) y Pueblo Atómico (dos casas frente a frente, estilo Nuketown).
 
 Armas: M4A1 (automático), SPAS-12 (escopeta), M82 Barrett (francotirador) y M1911 (pistola).
