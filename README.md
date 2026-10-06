@@ -15,6 +15,7 @@ Shooter en primera persona estilo Call of Duty que corre en el navegador (Three.
 | R | Recargar |
 | G | Granada |
 | 1–4, rueda, Q | Cambiar arma |
+| 5 · 6 · 7 | Rachas: UAV, ataque aéreo, helicóptero |
 | F | Pantalla completa |
 | Esc | Pausa |
 
