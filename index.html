@@ -96,6 +96,11 @@ body.playing #game{cursor:none}
 #hpfill{height:100%;width:100%;background:var(--hud);transition:width .15s}
 #hpfill.crit{background:var(--blood)}
 #hpnum{font:700 30px/1 var(--display);font-variant-numeric:tabular-nums;margin-top:6px}
+#armorrow{display:flex;align-items:center;gap:8px;margin-top:8px}
+#armorrow[hidden]{display:none}
+#armorbar{flex:1;height:6px;background:var(--faint);overflow:hidden}
+#armorfill{height:100%;width:0;background:#6fb7e6;transition:width .15s}
+#armornum{font:700 16px/1 var(--display);color:#6fb7e6;font-variant-numeric:tabular-nums;min-width:3ch;text-align:right}
 
 #hint{left:50%;top:calc(50% + 60px);transform:translateX(-50%);font:600 14px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--amber);text-shadow:0 1px 4px #000;white-space:nowrap}
 #hint kbd{border:1px solid var(--amber);padding:2px 6px;margin-right:6px;font:inherit}
@@ -133,7 +138,7 @@ button:focus-visible{outline:2px solid var(--hud);outline-offset:3px}
 .stat b{display:block;font:800 46px/1 var(--display);font-variant-numeric:tabular-nums}
 .note{font:500 12px/1.4 var(--body);color:var(--dim)}
 #nogl{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:24px;text-align:center;z-index:50;background:var(--ink)}
-#streaks{left:22px;bottom:calc(112px + env(safe-area-inset-bottom,0px));display:grid;gap:5px;width:220px}
+#streaks{left:22px;bottom:calc(140px + env(safe-area-inset-bottom,0px));display:grid;gap:5px;width:220px}
 #streaks .lbl b{color:var(--amber);font:800 18px/1 var(--display);margin-left:6px;letter-spacing:0}
 #pips{display:flex;gap:3px}
 #pips i{flex:1;height:4px;background:var(--faint)}
@@ -155,7 +160,7 @@ button:focus-visible{outline:2px solid var(--hud);outline-offset:3px}
 .sens{display:flex;gap:12px;align-items:center;font:500 13px/1 var(--body);color:var(--dim);flex-wrap:wrap}
 .sens input{accent-color:var(--amber);width:180px}
 .sens output{font:700 16px/1 var(--display);color:var(--hud);min-width:3ch}
-@media (max-width:640px){#streaks{width:150px;bottom:100px}#radar{width:120px;height:120px}#ammo{font-size:46px}#hpbox{width:150px}}
+@media (max-width:640px){#streaks{width:150px;bottom:128px}#radar{width:120px;height:120px}#ammo{font-size:46px}#hpbox{width:150px}}
 @media (prefers-reduced-motion:reduce){.kf,.pop,.dind{animation-duration:.01s}}
 </style>
 </head>
@@ -179,7 +184,7 @@ button:focus-visible{outline:2px solid var(--hud);outline-offset:3px}
     <div class="sk" data-id="air"><kbd>6</kbd><span>Ataque aéreo</span><em>5</em></div>
     <div class="sk" data-id="heli"><kbd>7</kbd><span>Helicóptero</span><em>7</em></div>
   </div>
-  <div class="hud" id="hpbox"><div class="lbl">Salud</div><div id="hpbar"><div id="hpfill"></div></div><div id="hpnum">100</div></div>
+  <div class="hud" id="hpbox"><div class="lbl">Salud</div><div id="hpbar"><div id="hpfill"></div></div><div id="hpnum">100</div><div id="armorrow" hidden><span class="lbl">Chaleco</span><div id="armorbar"><div id="armorfill"></div></div><span id="armornum">0</span></div></div>
   <div class="hud" id="ammobox"><div id="wname">M4A1</div><div class="lbl" id="wcal">5,56×45 mm</div><div id="ammo">30<small>/ 210</small></div><div id="nades"></div></div>
   <div class="hud" id="hint" hidden></div>
   <div class="hud" id="announce"><div class="big" id="annbig">OLEADA 1</div><div class="sub" id="annsub">Hostiles entrando en el sector</div></div>
@@ -219,7 +224,7 @@ button:focus-visible{outline:2px solid var(--hud);outline-offset:3px}
         <div class="gun"><b>·</b><span>Asaltante</span><small>Escopeta, corre hacia ti</small></div>
         <div class="gun"><b>·</b><span>Francotirador</span><small>Láser rojo antes de disparar</small></div>
         <div class="gun"><b>·</b><span>Pesado</span><small>Blindado, ametralladora</small></div>
-        <div class="note">Los barriles rojos explotan. Los enemigos caídos sueltan munición.</div>
+        <div class="note">Los barriles rojos explotan. Los enemigos caídos sueltan munición. Desde la oleada 2 aparecen chalecos antibalas (y los Pesados sueltan uno al morir).</div>
       </div>
     </div>
     <div class="note" id="touchnote" hidden>Este juego necesita teclado y ratón.</div>
@@ -1371,7 +1376,7 @@ const keys = {};
 const mouse = { l: false, r: false, x: innerWidth / 2, y: innerHeight / 2 };
 const player = {
   pos: new V3(0, 0, 46), vel: new V3(), vy: 0, grounded: true, yaw: 0, pitch: 0,
-  eye: 1.65, crouch: false, sprint: false, hp: 100, lastHit: -99, slideT: 0, slideDir: new V3(),
+  eye: 1.65, crouch: false, sprint: false, hp: 100, armor: 0, lastHit: -99, slideT: 0, slideDir: new V3(),
   bob: 0, land: 0, prevStep: 0, recoilP: 0, recoilY: 0, shake: 0, dead: false
 };
 const stats = { score: 0, kills: 0, hs: 0, wave: 0 };
@@ -1694,7 +1699,8 @@ class Enemy {
     const local = Math.atan2(away.x, away.z) - this.yaw;
     this.fallX = -Math.cos(local); this.fallZ = Math.sin(local) * .6;
     this.fallSpin = rand(-.5, .5);
-    if (Math.random() < .5) spawnPickup(this.root.position);
+    if (this.type === 'heavy') spawnVest(this.root.position.clone());
+    else if (Math.random() < .5) spawnPickup(this.root.position);
   }
   update(dt, t) {
     const root = this.root, p = root.position;
@@ -1870,6 +1876,46 @@ class Enemy {
   }
 }
 
+// bulletproof vests
+const vests = [];
+const vestMat = std(0x3d4a5a, { r: .8 }), vestPlate = std(0x2a3340, { r: .6, m: .2 }), vestStrap = std(0x1d2228, { r: .9 });
+const vestGlow = new THREE.MeshBasicMaterial({ color: 0x6fb7e6, transparent: true, opacity: .45, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+function freeSpot(minD, maxD) {
+  for (let k = 0; k < 60; k++) {
+    const x = rand(-MAP + 3, MAP - 3), z = rand(-MAP + 3, MAP - 3);
+    const d = Math.hypot(x - player.pos.x, z - player.pos.z);
+    if (d < minD || d > maxD) continue;
+    if (colliders.some(c => !c.off && x > c.min.x - 1 && x < c.max.x + 1 && z > c.min.z - 1 && z < c.max.z + 1)) continue;
+    return new V3(x, 0, z);
+  }
+  return null;
+}
+function spawnVest(pos) {
+  if (!pos || vests.length >= 3) return;
+  const g = new THREE.Group();
+  const body = new THREE.Group(); body.position.y = .75; g.add(body);
+  part(body, B(.5, .56, .28), vestMat, 0, 0, 0);
+  part(body, B(.36, .34, .05), vestPlate, 0, .04, .16); part(body, B(.36, .34, .05), vestPlate, 0, .04, -.16);
+  for (const sx of [-.17, 0, .17]) part(body, B(.13, .14, .07), vestMat, sx, -.16, .19);
+  for (const sx of [-.18, .18]) part(body, B(.1, .16, .3), vestStrap, sx, .33, 0);
+  body.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  const ring = new THREE.Mesh(new THREE.RingGeometry(.55, .75, 32), vestGlow); ring.rotation.x = -Math.PI / 2; ring.position.y = .04; g.add(ring);
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(.06, .06, 6, 8, 1, true), vestGlow); beam.position.y = 3; g.add(beam);
+  g.position.set(pos.x, 0, pos.z); scene.add(g);
+  vests.push({ g, body, t: 0 });
+}
+function updateVests(dt) {
+  for (let i = vests.length - 1; i >= 0; i--) {
+    const v = vests[i]; v.t += dt;
+    v.body.rotation.y += dt * 1.4; v.body.position.y = .75 + Math.sin(v.t * 2.5) * .08;
+    if (!player.dead && player.armor < 100 && Math.hypot(v.g.position.x - player.pos.x, v.g.position.z - player.pos.z) < 1.5) {
+      player.armor = 100;
+      popup('+ Chaleco antibalas', 'Absorbe el 70 % del daño'); Snd.click(900, .3); Snd.click(1400, .3, .1); Snd.click(2000, .25, .2);
+      scene.remove(v.g); vests.splice(i, 1);
+    }
+  }
+}
+
 // pickups
 const pickups = [];
 const pickupMat = std(0x56613a, { r: .7 });
@@ -1957,7 +2003,7 @@ const hud = {
   ann: $('announce'), annbig: $('annbig'), annsub: $('annsub'), pops: $('pops'), dmg: $('dmg'), nades: $('nades'), flash: $('flash')
 };
 const xhParts = { t: hud.xh.querySelector('.t'), b: hud.xh.querySelector('.b'), l: hud.xh.querySelector('.l'), r: hud.xh.querySelector('.r') };
-let lastAmmoStr = '', lastHp = -1, lastScore = -1, lastLeft = '', lastHint = '';
+let lastArmor = -1, lastAmmoStr = '', lastHp = -1, lastScore = -1, lastLeft = '', lastHint = '';
 function updateNades() { hud.nades.innerHTML = ''; for (let i = 0; i < 4; i++) { const e = document.createElement('i'); if (i >= grenades) e.className = 'used'; hud.nades.appendChild(e); } }
 function setWeaponHud() { hud.wname.textContent = WEAPONS[cur].name; hud.wcal.textContent = WEAPONS[cur].cal; lastAmmoStr = ''; }
 function showHit(kill) {
@@ -2012,6 +2058,8 @@ function drawRadar(t) {
     const a = map(c.min.x, c.min.z), b = map(c.max.x, c.min.z), d = map(c.max.x, c.max.z), e = map(c.min.x, c.max.z);
     rctx.beginPath(); rctx.moveTo(a[0], a[1]); rctx.lineTo(b[0], b[1]); rctx.lineTo(d[0], d[1]); rctx.lineTo(e[0], e[1]); rctx.fill();
   }
+  rctx.fillStyle = '#6fb7e6';
+  for (const v of vests) { const [x, y] = map(v.g.position.x, v.g.position.z); rctx.fillRect(x - 4 * RDPR, y - 4 * RDPR, 8 * RDPR, 8 * RDPR); }
   rctx.fillStyle = '#f2b33d';
   for (const p of pickups) { const [x, y] = map(p.g.position.x, p.g.position.z); rctx.fillRect(x - 2 * RDPR, y - 2 * RDPR, 4 * RDPR, 4 * RDPR); }
   for (const e of enemies) {
@@ -2046,6 +2094,12 @@ const waveState = { toSpawn: 0, spawnT: 0, interT: 0, active: false };
 
 function hurtPlayer(d, from) {
   if (player.dead || state !== 'playing') return;
+  if (player.armor > 0) {
+    const absorbed = Math.min(player.armor, d * .7);
+    player.armor -= absorbed; d -= absorbed;
+    Snd.click(3200, .12);
+    if (player.armor <= 0) { player.armor = 0; popup('Chaleco destruido'); }
+  }
   player.hp -= d; player.lastHit = gameTime;
   if (player.hp < 25) resetStreak(true);
   damageIndicator(from); Snd.hurt();
@@ -2274,6 +2328,7 @@ function clearWorld() {
   for (const e of enemies) { scene.remove(e.root); if (e.laser) scene.remove(e.laser); const i = shootables.indexOf(e.root); if (i >= 0) shootables.splice(i, 1); }
   enemies.length = 0;
   for (const p of pickups) scene.remove(p.g); pickups.length = 0;
+  for (const v of vests) scene.remove(v.g); vests.length = 0;
   for (const n of nadesLive) scene.remove(n.m); nadesLive.length = 0;
   for (const c of coverPoints) c.taken = null;
   for (const b of barrels) {
@@ -2284,7 +2339,7 @@ function clearWorld() {
 }
 function startGame() {
   clearWorld();
-  Object.assign(player, { hp: 100, lastHit: -99, dead: false, vy: 0, slideT: 0, recoilP: 0, recoilY: 0, shake: 0, crouch: false, eye: 1.65, yaw: 0, pitch: 0 });
+  Object.assign(player, { hp: 100, armor: 0, lastHit: -99, dead: false, vy: 0, slideT: 0, recoilP: 0, recoilY: 0, shake: 0, crouch: false, eye: 1.65, yaw: 0, pitch: 0 });
   player.pos.set(MAPS[curMap].start[0], 0, MAPS[curMap].start[1]); player.vel.set(0, 0, 0);
   Object.assign(stats, { score: 0, kills: 0, hs: 0, wave: 0 });
   WEAPONS.forEach((w, i) => { wstate[i].mag = w.mag; wstate[i].reserve = w.reserve; });
@@ -2617,6 +2672,7 @@ function updatePlayer(dt) {
   if (player.sprint && hs > 5) fov += 6;
   if (player.slideT > 0) fov += 8;
   camera.fov = damp(camera.fov, fov, 14, dt); camera.updateProjectionMatrix();
+  updateVests(dt);
   // pickups
   for (let i = pickups.length - 1; i >= 0; i--) {
     const pk = pickups[i]; pk.t += dt;
@@ -2774,7 +2830,13 @@ function updateWaves(dt) {
   } else if (alive === 0) {
     waveState.active = false; waveState.interT = 6;
     stats.score += 250 * stats.wave;
-    announce('SECTOR DESPEJADO', `+${250 * stats.wave} · Siguiente oleada en 6 s`, 4000);
+    let sub = `+${250 * stats.wave} · Siguiente oleada en 6 s`;
+    if (stats.wave >= 2) {
+      const n = stats.wave >= 5 ? 2 : 1;
+      for (let k = 0; k < n; k++) spawnVest(freeSpot(8, 30) || freeSpot(4, 80));
+      sub += ' · Chaleco antibalas en el mapa (azul en el radar)';
+    }
+    announce('SECTOR DESPEJADO', sub, 5000);
     WEAPONS.forEach((w, k) => wstate[k].reserve = Math.max(wstate[k].reserve, Math.floor(w.reserve * .6)));
     lastAmmoStr = '';
   }
@@ -2790,6 +2852,8 @@ function updateHud(dt, t) {
     hud.ammo.classList.toggle('low', s.mag <= Math.ceil(w.mag * .25));
   }
   const hp = Math.ceil(player.hp);
+  const ar = Math.ceil(player.armor);
+  if (ar !== lastArmor) { lastArmor = ar; $('armorrow').hidden = ar <= 0; $('armorfill').style.width = ar + '%'; $('armornum').textContent = ar; }
   if (hp !== lastHp) { lastHp = hp; hud.hp.style.width = hp + '%'; hud.hp.classList.toggle('crit', hp < 35); hud.hpnum.textContent = hp; }
   if (stats.score !== lastScore) { lastScore = stats.score; hud.score.textContent = stats.score.toLocaleString('es-ES'); }
   hud.wave.textContent = `OLEADA ${Math.max(1, stats.wave)}`;
@@ -2859,7 +2923,7 @@ updateNades(); setWeaponHud();
 frame();
 
 // test hook (harmless in production)
-window.__tormenta = { get state() { return state; }, streak, useStreak, get heli() { return heli; }, scene, wScene, player, loadMap, clearWorld, placeAttract, enemies, stats, startGame, keys, mouse, run(sec) { for (let i = 0; i < sec * 60; i++) { scene.updateMatrixWorld(); simulate(1 / 60); } } };
+window.__tormenta = { get state() { return state; }, vests, spawnVest, freeSpot, streak, useStreak, get heli() { return heli; }, scene, wScene, player, loadMap, clearWorld, placeAttract, enemies, stats, startGame, keys, mouse, run(sec) { for (let i = 0; i < sec * 60; i++) { scene.updateMatrixWorld(); simulate(1 / 60); } } };
 })();
 </script>
 </body>

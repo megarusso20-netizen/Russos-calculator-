@@ -22,5 +22,6 @@ Shooter en primera persona estilo Call of Duty que corre en el navegador (Three.
 Mapas: Al-Kharif (desierto), Puerto Viejo (muelle), Base Glaciar (nieve) y Pueblo Atómico (dos casas frente a frente, estilo Nuketown).
 
 Armas: M4A1 (automático), SPAS-12 (escopeta), M82 Barrett (francotirador) y M1911 (pistola).
+Desde la oleada 2 aparecen chalecos antibalas (absorben el 70 % del daño) y los Pesados sueltan uno al morir.
 Los enemigos buscan cobertura, se asoman para disparar y flanquean. Hay oleadas cada vez más grandes,
 barriles explosivos, munición que sueltan los enemigos, radar, indicadores de daño y regeneración de salud.
