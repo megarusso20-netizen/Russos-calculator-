@@ -159,7 +159,7 @@ button:focus-visible{outline:2px solid var(--hud);outline-offset:3px}
     <div class="eyebrow">Sector 7 · Al-Kharif · 16:40 hora local</div>
     <h1>Operación <em>Tormenta</em></h1>
     <p class="brief">Un pueblo del desierto tomado por insurgentes. Usa los muros, los contenedores y los sacos terreros para cubrirte. Resiste oleada tras oleada. La salud se recupera si dejas de recibir disparos.</p>
-    <div class="btns"><button id="play">Desplegar</button></div>
+    <div class="btns"><button id="play">Desplegar</button><button class="ghost" id="fs">Pantalla completa</button></div>
     <div class="cols">
       <div class="keys">
         <kbd>W A S D</kbd><span>Moverse</span>
@@ -171,6 +171,7 @@ button:focus-visible{outline:2px solid var(--hud);outline-offset:3px}
         <kbd>R</kbd><span>Recargar</span>
         <kbd>G</kbd><span>Granada</span>
         <kbd>1–4 · Rueda</kbd><span>Cambiar arma</span>
+        <kbd>F</kbd><span>Pantalla completa</span>
         <kbd>Esc</kbd><span>Pausa</span>
       </div>
       <div class="loadout">
@@ -1638,6 +1639,7 @@ document.addEventListener('keydown', e => {
       if (player.grounded) { player.vy = 6.2; player.grounded = false; player.crouch = false; player.slideT = 0; }
       break;
     case 'Escape': case 'KeyP': if (noLock) pause(); break;
+    case 'KeyF': if (document.fullscreenElement) fullscreen(false); else { fullscreen(true); setTimeout(() => { if (state === 'playing') lock(); }, 150); } break;
   }
 });
 document.addEventListener('keyup', e => { keys[e.code] = false; });
@@ -1667,6 +1669,16 @@ window.addEventListener('wheel', e => {
   prevW = cur; switchWeapon((target + d + WEAPONS.length) % WEAPONS.length);
 }, { passive: true });
 
+function fullscreen(on = true) {
+  try {
+    const el = document.documentElement;
+    if (on && !document.fullscreenElement && el.requestFullscreen) { const r = el.requestFullscreen({ navigationUI: 'hide' }); if (r && r.catch) r.catch(() => {}); }
+    else if (!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+  } catch (e) {}
+}
+function updateFsLabel() { $('fs').textContent = document.fullscreenElement ? 'Salir de pantalla completa' : 'Pantalla completa'; }
+document.addEventListener('fullscreenchange', () => { updateFsLabel(); setTimeout(resize, 50); });
+$('fs').addEventListener('click', () => fullscreen(!document.fullscreenElement));
 function lock() {
   try {
     const r = canvas.requestPointerLock();
@@ -1689,10 +1701,10 @@ function toMenu() {
   $('pause').hidden = true; $('over').hidden = true; $('menu').hidden = false; $('hudroot').classList.add('off');
   clearWorld(); placeAttract(); state = 'menu';
 }
-$('play').addEventListener('click', () => { Snd.init(); $('menu').hidden = true; startGame(); lock(); });
-$('resume').addEventListener('click', () => { Snd.init(); resume(); });
+$('play').addEventListener('click', () => { Snd.init(); fullscreen(); $('menu').hidden = true; startGame(); lock(); });
+$('resume').addEventListener('click', () => { Snd.init(); fullscreen(); resume(); });
 $('quit').addEventListener('click', toMenu);
-$('retry').addEventListener('click', () => { Snd.init(); $('over').hidden = true; startGame(); lock(); });
+$('retry').addEventListener('click', () => { Snd.init(); fullscreen(); $('over').hidden = true; startGame(); lock(); });
 $('tomenu').addEventListener('click', toMenu);
 
 // attract-mode soldiers in the menu

@@ -15,6 +15,7 @@ Shooter en primera persona estilo Call of Duty que corre en el navegador (Three.
 | R | Recargar |
 | G | Granada |
 | 1–4, rueda, Q | Cambiar arma |
+| F | Pantalla completa |
 | Esc | Pausa |
 
 Armas: M4A1 (automático), SPAS-12 (escopeta), M82 Barrett (francotirador) y M1911 (pistola).
