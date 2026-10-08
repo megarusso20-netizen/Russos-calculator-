@@ -63,3 +63,19 @@ En el menú, Armería: miras (hierro, punto rojo, holográfica, ACOG 4x), silenc
 | Start / Options | Pausa |
 
 En los menús: cruceta o stick para moverte, A para elegir, B para volver y Start para desplegar.
+
+## Subir a Firebase (proyecto playkorsou)
+
+La carpeta `dist/` contiene el juego listo para Firebase Hosting (un solo `index.html` que funciona sin internet externo).
+`firebase.json` lo sube a un **sitio aparte** dentro del mismo proyecto, así no se toca la web que ya existe en playkorsou.web.app.
+
+```
+npm install -g firebase-tools
+firebase login
+firebase hosting:sites:create playkorsou-tormenta --project playkorsou
+firebase deploy --only hosting --project playkorsou
+```
+
+El juego queda en https://playkorsou-tormenta.web.app
+
+Si prefieres tenerlo dentro de la web actual (https://playkorsou.web.app/tormenta/), copia `dist/index.html` a la carpeta pública de ese proyecto como `tormenta/index.html` y haz `firebase deploy` desde allí.

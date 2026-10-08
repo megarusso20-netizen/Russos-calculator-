@@ -1,0 +1,10 @@
+{
+  "hosting": {
+    "site": "playkorsou-tormenta",
+    "public": "dist",
+    "ignore": ["firebase.json", "**/.*"],
+    "headers": [
+      { "source": "**/*.html", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+    ]
+  }
+}
