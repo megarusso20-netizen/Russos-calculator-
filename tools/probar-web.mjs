@@ -26,6 +26,9 @@ for (const [dev, opts] of [['pc', { viewport: { width: 1280, height: 760 } }], [
     log('ala azul ->', page.url(), '|', await page.title());
     log('  botones visibles:', JSON.stringify(await page.$$eval('button', bs => bs.filter(b => b.offsetParent).map(b => b.textContent.replace(/\s+/g, ' ').trim().slice(0, 30)))));
     await shot('2-ala-azul');
+    const back = await page.$('a[href="/"]');
+    log('  botón ‹ JUEGOS:', back ? 'sí' : 'NO');
+    if (back) { await back.click(); await page.waitForLoadState('load'); await page.waitForTimeout(800); log('  al pulsarlo ->', page.url(), '|', await page.title()); await page.goBack(); await page.waitForTimeout(1500); }
     const start = await page.$('.overlay button');
     if (start) { await start.click().catch(e => log('  no se pudo pulsar empezar:', e.message.slice(0, 80))); await page.waitForTimeout(2500); await shot('3-ala-azul-jugando'); log('  después de pulsar:', page.url()); }
     log('  errores:', errors.length ? errors.join(' || ') : 'ninguno'); errors.length = 0;

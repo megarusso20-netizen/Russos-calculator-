@@ -50,6 +50,8 @@ const index = ala || files.find(f => f.path === '/index.html');
 if (!index) throw new Error('No hay /index.html en el sitio; no lo toco.');
 const add = { '/index.html': 'playkorsou/index.html', '/tormenta/index.html': 'playkorsou/tormenta/index.html' };
 const hashes = { '/ala-azul.html': index.hash }, blobs = {};
+// optional: a revised Ala Azul page (for example with a link back to the game selector)
+if (process.env.ALA_FILE) add['/ala-azul.html'] = process.env.ALA_FILE;
 for (const [p, local] of Object.entries(add)) {
   const gz = zlib.gzipSync(fs.readFileSync(local), { level: 9 });
   const h = crypto.createHash('sha256').update(gz).digest('hex');
