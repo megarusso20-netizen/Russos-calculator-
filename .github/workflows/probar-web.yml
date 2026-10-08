@@ -1,0 +1,39 @@
+name: Probar la web de Play Korsou
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/probar-web.yml
+      - tools/probar-web.mjs
+
+permissions:
+  contents: write
+
+jobs:
+  probar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Instalar navegador
+        run: |
+          npm init -y >/dev/null
+          npm install playwright@1.56.1 >/dev/null
+          npx playwright install --with-deps chromium >/dev/null
+      - name: Probar la web
+        run: node tools/probar-web.mjs
+      - name: Guardar capturas en la rama "capturas"
+        if: always()
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          mkdir -p /tmp/cap && cp -r capturas/. /tmp/cap/ || true
+          git checkout --orphan capturas-tmp
+          git rm -rq --cached . || true
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -r /tmp/cap/. .
+          git add -A && git commit -qm "Capturas de la web $(date -u +%FT%TZ)"
+          git push -f origin HEAD:capturas
