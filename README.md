@@ -16,6 +16,7 @@ Shooter en primera persona estilo Call of Duty que corre en el navegador (Three.
 | G | Granada |
 | 1–5, rueda, Q | Cambiar arma (5 = RPG-7) |
 | V | Cuchillo |
+| E | Usar / comprar (modo Zombis) |
 | 6 · 7 · 8 | Rachas: UAV, ataque aéreo, helicóptero |
 | F | Pantalla completa |
 | Esc | Pausa |
@@ -32,3 +33,13 @@ Móvil: joystick a la izquierda, desliza a la derecha para apuntar y botones en 
 Desde la oleada 2 aparecen chalecos antibalas (absorben el 70 % del daño) y los Pesados sueltan uno al morir.
 Los enemigos buscan cobertura, se asoman para disparar y flanquean. Hay oleadas cada vez más grandes,
 barriles explosivos, munición que sueltan los enemigos, radar, indicadores de daño y regeneración de salud.
+
+## Modo Zombis
+
+Rondas infinitas de noche, con linterna. Empiezas con la M1911 y 500 puntos: cada impacto da 10, cada baja 60 (100 a la cabeza, 130 con cuchillo).
+Con la tecla E compras armas en las pizarras, bebidas con ventajas (Jugo de Hierro, Cola Rápida, Doble Golpe, Revive Exprés) y la caja misteriosa (950), que puede dar el Rayo X-1.
+Los zombis a veces sueltan Munición máxima, Baja instantánea, Puntos dobles o Nuke.
+
+## Armería
+
+En el menú, Armería: miras (hierro, punto rojo, holográfica, ACOG 4x), silenciador y cargador ampliado para M4A1, AK-47 y MP5, y camuflajes para todas las armas (desierto, bosque, ártico, tigre, digital y oro).
