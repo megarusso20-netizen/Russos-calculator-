@@ -1,0 +1,37 @@
+PLAY KORSOU: DOS JUEGOS EN LA MISMA WEB
+=======================================
+
+Contenido de este paquete:
+  index.html          -> nueva portada con dos botones: Ala Azul y Tormenta del Desierto
+  tormenta/index.html -> el juego Tormenta del Desierto (Operación Tormenta)
+
+Pasos (en la carpeta del proyecto de Play Korsou, en tu PC):
+
+1. Abre firebase.json y mira el valor de "public" (por ejemplo "public" o "dist").
+   Esa es la carpeta pública.
+
+2. Dentro de la carpeta pública, CAMBIA EL NOMBRE del index.html actual (Ala Azul)
+   a:  ala-azul.html
+   (Se queda en la misma carpeta, así sus imágenes y archivos siguen funcionando.)
+
+3. Copia en la carpeta pública el index.html de este paquete (la portada nueva)
+   y la carpeta tormenta/.
+
+   Debe quedar así:
+     public/
+       index.html        <- portada con los dos botones
+       ala-azul.html     <- Ala Azul (antes era index.html)
+       tormenta/
+         index.html      <- Tormenta del Desierto
+       ...el resto de archivos de Ala Azul, sin moverlos...
+
+4. Solo si firebase.json tiene una parte "rewrites" con "destination": "/index.html":
+   cambia ese "/index.html" por "/ala-azul.html".
+
+5. Sube todo:
+     firebase deploy --only hosting --project playkorsou
+
+Resultado:
+  https://playkorsou.web.app/                -> portada con los dos botones
+  https://playkorsou.web.app/ala-azul.html   -> Ala Azul
+  https://playkorsou.web.app/tormenta/       -> Tormenta del Desierto
