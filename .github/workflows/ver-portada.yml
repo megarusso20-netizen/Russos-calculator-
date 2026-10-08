@@ -10,11 +10,10 @@ jobs:
   ver:
     runs-on: ubuntu-latest
     steps:
-      - name: Descargar la portada actual
+      - name: Comprobar las tres direcciones
         run: |
-          curl -sS https://playkorsou.web.app/ -o portada.html
-          wc -c portada.html
-          echo "----- scripts, enlaces y llamadas a Firebase -----"
-          grep -oE '(src|href)="[^"]*"|firebase[A-Za-z.]*\([^)]{0,80}|location\.[a-z]+[^;]{0,60}|signIn[A-Za-z]*' portada.html | sort | uniq -c | head -120
-          echo "----- primeros 6000 caracteres -----"
-          head -c 6000 portada.html
+          for u in https://playkorsou.web.app/ https://playkorsou.web.app/ala-azul https://playkorsou.web.app/tormenta/; do
+            code=$(curl -s -o page.html -w "%{http_code}" "$u")
+            title=$(grep -o '<title>[^<]*</title>' page.html | head -1)
+            echo "$u -> HTTP $code $title ($(wc -c < page.html) bytes)"
+          done
