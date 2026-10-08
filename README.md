@@ -78,4 +78,4 @@ firebase deploy --only hosting --project playkorsou
 
 El juego queda en https://playkorsou-tormenta.web.app
 
-Si prefieres tenerlo dentro de la web actual (https://playkorsou.web.app/tormenta/), copia `dist/index.html` a la carpeta pública de ese proyecto como `tormenta/index.html` y haz `firebase deploy` desde allí.
+Para que los dos juegos convivan en la misma web (https://playkorsou.web.app/tormenta/): descomprime `tormenta-para-playkorsou.zip` dentro de la carpeta pública del proyecto de playkorsou (la que indica `"public"` en su `firebase.json`) y haz `firebase deploy` desde ese proyecto. El menú del juego muestra entonces un botón "Volver a Play Korsou". Si ese `firebase.json` tiene una regla `rewrites` con `"source": "**"`, Firebase igualmente sirve primero los archivos que existen, así que `/tormenta/` carga el juego.

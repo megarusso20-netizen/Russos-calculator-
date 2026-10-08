@@ -149,6 +149,10 @@ h1 em{font-style:normal;color:var(--amber);display:block}
 .brief{font:400 15px/1.6 var(--body);color:var(--dim);max-width:52ch;margin:0}
 .btns{display:flex;gap:12px;flex-wrap:wrap}
 button{font:700 20px/1 var(--display);letter-spacing:.14em;text-transform:uppercase;padding:15px 34px;border:0;background:var(--amber);color:#14130d;cursor:pointer;clip-path:polygon(0 0,100% 0,100% 70%,calc(100% - 12px) 100%,0 100%)}
+.hubback{font:700 20px/1 var(--display);letter-spacing:.14em;text-transform:uppercase;padding:15px 34px;color:var(--hud);outline:1px solid var(--faint);text-decoration:none;display:inline-block}
+.hubback[hidden]{display:none}
+.hubback:hover{color:var(--amber)}
+.hubback:focus-visible{outline:2px solid var(--hud);outline-offset:3px}
 button.ghost{background:transparent;color:var(--hud);outline:1px solid var(--faint)}
 button:hover{filter:brightness(1.1)}
 button:focus-visible{outline:2px solid var(--hud);outline-offset:3px}
@@ -293,7 +297,7 @@ body.touch #bossbar{top:calc(70px + env(safe-area-inset-top,0px))}
     <div class="qual">Gráficos<div class="qual" id="qual" role="group" aria-label="Calidad gráfica"></div></div>
     <div class="qual">Arma principal<div class="qual" id="primsel" role="group" aria-label="Arma principal"></div></div>
     <div class="qual">Asistencia de apuntado (mando)<div class="qual" id="aasel" role="group" aria-label="Asistencia de apuntado"></div></div>
-    <div class="btns"><button id="play">Desplegar</button><button class="ghost" id="armorybtn">Armería</button><button class="ghost" id="fs">Pantalla completa</button></div>
+    <div class="btns"><button id="play">Desplegar</button><button class="ghost" id="armorybtn">Armería</button><button class="ghost" id="fs">Pantalla completa</button><a class="ghost hubback" id="hubback" href="/" hidden>Volver a Play Korsou</a></div>
     <div class="cols">
       <div class="keys">
         <kbd>W A S D</kbd><span>Moverse</span>
@@ -5346,6 +5350,8 @@ function renderAA() {
   [...box.children].forEach(b => b.setAttribute('aria-pressed', (b.dataset.v === '1') === aimAssist));
 }
 renderAA(); renderPadNote();
+// when the game lives inside another site (e.g. playkorsou.web.app/tormenta/), offer a way back to that site's home
+if (/^https?:$/.test(location.protocol) && /\/tormenta(\/|$)/.test(location.pathname)) $('hubback').hidden = false;
 function setSens(v) {
   settings.sens = clamp(+v || 1, .2, 3);
   for (const [i, o] of [['sens', 'sensv'], ['sens2', 'sensv2']]) { $(i).value = settings.sens; $(o).textContent = settings.sens.toFixed(2); }
