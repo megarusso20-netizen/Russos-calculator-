@@ -43,3 +43,23 @@ Los zombis a veces sueltan Munición máxima, Baja instantánea, Puntos dobles o
 ## Armería
 
 En el menú, Armería: miras (hierro, punto rojo, holográfica, ACOG 4x), silenciador y cargador ampliado para M4A1, AK-47 y MP5, y camuflajes para todas las armas (desierto, bosque, ártico, tigre, digital y oro).
+
+## Mando (Xbox, PlayStation o genérico, por USB o Bluetooth; también en el móvil)
+
+| Mando | Acción |
+|---|---|
+| Stick izquierdo (L3 = correr) | Moverse |
+| Stick derecho | Apuntar (con asistencia de apuntado opcional) |
+| RT / R2 | Disparar |
+| LT / L2 | Mirar por la mira |
+| A / Cruz | Saltar |
+| B / Círculo | Agacharse / deslizarse |
+| X / Cuadrado | Recargar (o usar/comprar en Zombis) |
+| Y / Triángulo | Cambiar arma |
+| RB / R1 | Granada |
+| LB / L1 | Usar racha (o comprar en Zombis) |
+| R3 | Cuchillo |
+| Cruceta | Rachas (arriba UAV, izquierda aéreo, derecha helicóptero, abajo lanzacohetes) |
+| Start / Options | Pausa |
+
+En los menús: cruceta o stick para moverte, A para elegir, B para volver y Start para desplegar.

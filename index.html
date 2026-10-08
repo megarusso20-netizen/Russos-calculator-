@@ -38,6 +38,9 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--ink);color:var(-
 #hit{left:50%;top:50%;width:0;height:0;opacity:0}
 body.playing #game{cursor:none}
 #lockmsg{color:var(--amber);font:600 14px/1.4 var(--body)}
+body.pad #touchui{display:none!important}
+body.pad .screen button:focus,body.pad .screen input:focus{outline:3px solid var(--amber);outline-offset:3px}
+#padnote{color:var(--amber)}
 #hit i{position:absolute;width:2px;height:11px;background:#fff;left:-1px;top:-5px;box-shadow:0 0 2px #000}
 #hit i:nth-child(1){transform:rotate(45deg) translateY(-11px)}
 #hit i:nth-child(2){transform:rotate(135deg) translateY(-11px)}
@@ -284,10 +287,12 @@ body.touch #bossbar{top:calc(70px + env(safe-area-inset-top,0px))}
     <p class="brief">Elige un mapa y resiste oleada tras oleada. Usa los muros, los contenedores y los sacos terreros para cubrirte. Consigue bajas seguidas para pedir apoyo: UAV, ataque aéreo y helicóptero. La racha se pierde si tu salud baja de 25.</p>
     <div class="qual">Modo<div class="qual" id="modesel" role="group" aria-label="Modo de juego"></div></div>
     <p class="note" id="modedesc"></p>
+    <p class="note" id="padnote" hidden></p>
     <div class="maps" id="maps" role="group" aria-label="Mapa"></div>
     <label class="sens" for="sens">Sensibilidad del ratón <input type="range" id="sens" min="0.2" max="3" step="0.05" value="1"><output id="sensv">1.00</output></label>
     <div class="qual">Gráficos<div class="qual" id="qual" role="group" aria-label="Calidad gráfica"></div></div>
     <div class="qual">Arma principal<div class="qual" id="primsel" role="group" aria-label="Arma principal"></div></div>
+    <div class="qual">Asistencia de apuntado (mando)<div class="qual" id="aasel" role="group" aria-label="Asistencia de apuntado"></div></div>
     <div class="btns"><button id="play">Desplegar</button><button class="ghost" id="armorybtn">Armería</button><button class="ghost" id="fs">Pantalla completa</button></div>
     <div class="cols">
       <div class="keys">
@@ -305,6 +310,7 @@ body.touch #bossbar{top:calc(70px + env(safe-area-inset-top,0px))}
         <kbd>6 · 7 · 8</kbd><span>Rachas: UAV, ataque aéreo, helicóptero</span>
         <kbd>F</kbd><span>Pantalla completa</span>
         <kbd>Esc</kbd><span>Pausa</span>
+        <kbd>Mando</kbd><span>LS mover (L3 correr) · RS apuntar · RT disparar · LT mirilla · A saltar · B agacharse · X recargar/usar · Y cambiar arma · RB granada · R3 cuchillo · cruceta rachas · Start pausa</span>
       </div>
       <div class="loadout">
         <div class="lbl">Equipo</div>
@@ -3898,6 +3904,7 @@ function explode(pos, radius, dmg, opt = {}) {
   const d = pos.distanceTo(camera.position);
   Snd.explosion(d);
   player.shake = Math.max(player.shake, clamp(1.4 - d / 22, 0, 1.2));
+  rumble(clamp(1.2 - d / 30, 0, 1), clamp(1 - d / 40, 0, .8), 350);
   const f = fires[fireI]; fireI = (fireI + 1) % fires.length;
   f.s.position.copy(pos).add(new V3(0, .6, 0)); f.life = f.max = .45; f.size = radius * .9; f.s.visible = true;
   boomLight.position.copy(pos).add(new V3(0, 1, 0)); boomLight.intensity = 12;
@@ -4028,6 +4035,7 @@ let endless = false;
 
 function hurtPlayer(d, from) {
   if (player.dead || state !== 'playing') return;
+  rumble(.6, .3, 160);
   if (player.armor > 0) {
     const absorbed = Math.min(player.armor, d * .7);
     player.armor -= absorbed; d -= absorbed;
@@ -4718,6 +4726,7 @@ function fire(t) {
   if (w.id === 'm82' && s.mag > 0) W.pumpT = .9;
   muzzleLight.position.copy(muzzleWorld); muzzleLight.intensity = w.id === 'm82' ? 6 : 3.5;
   Snd.shot(w.supp ? 'supp' : w.snd);
+  rumble(w.id === 'm82' || w.id === 'spas' ? .7 : .15, w.id === 'm82' ? .5 : .35, w.auto ? 50 : 110);
   if (w.id === 'spas') setTimeout(() => ejectCasing(true), 330);
   else if (w.id === 'm82') setTimeout(() => ejectCasing(false), 520);
   else ejectCasing(false);
@@ -4812,12 +4821,131 @@ $('fs').addEventListener('click', () => fullscreen(!document.fullscreenElement))
 // Raw input (no OS acceleration) is requested where supported; on NotSupportedError we retry without it.
 // Chrome refuses a new lock for about a second after the player presses Esc, so a failure only asks for another click.
 let lockPromise = false;
+// ======================= GAMEPAD (Xbox / PlayStation / generic, standard mapping) =======================
+const pad = { active: false, prev: [], lx: 0, ly: 0, rx: 0, ry: 0, firing: false, aiming: false, sprint: false, navT: 0, id: '' };
+let aimAssist = true;
+try { aimAssist = localStorage.getItem('tormenta-aimassist') !== '0'; } catch (e) {}
+function padDZ(v, d = .16) { const a = Math.abs(v); return a < d ? 0 : Math.sign(v) * (a - d) / (1 - d); }
+function getPad() {
+  const list = navigator.getGamepads ? navigator.getGamepads() : [];
+  for (const g of list) if (g && g.connected && g.buttons && g.buttons.length >= 12) return g;
+  return null;
+}
+function setPadActive(on) {
+  if (pad.active === on) return;
+  pad.active = on; document.body.classList.toggle('pad', on);
+  if (!on) { if (pad.firing) { pad.firing = false; mouse.l = false; } if (pad.aiming) { pad.aiming = false; mouse.r = false; } }
+}
+function rumble(strong, weak, ms) {
+  if (!pad.active) return;
+  const g = getPad(); const a = g && g.vibrationActuator;
+  if (a && a.playEffect) a.playEffect('dual-rumble', { duration: ms, strongMagnitude: clamp(strong, 0, 1), weakMagnitude: clamp(weak, 0, 1) }).catch(() => {});
+}
+window.addEventListener('gamepadconnected', e => { pad.id = e.gamepad.id; renderPadNote(); });
+window.addEventListener('gamepaddisconnected', () => { pad.id = ''; setPadActive(false); renderPadNote(); });
+window.addEventListener('mousedown', () => setPadActive(false));
+window.addEventListener('touchstart', () => setPadActive(false), { passive: true });
+function renderPadNote() { const n = $('padnote'); if (n) { n.hidden = !pad.id; n.textContent = pad.id ? `Mando conectado: ${pad.id.replace(/\(.*?\)/g, '').trim().slice(0, 48)}` : ''; } }
+// focus navigation for menus with the d-pad / left stick
+function visibleScreen() { return [...document.querySelectorAll('.screen')].find(s => !s.hidden); }
+function focusables() { const s = visibleScreen(); return s ? [...s.querySelectorAll('button, input')].filter(el => el.offsetParent !== null && !el.disabled) : []; }
+function padNav(dir) {
+  const els = focusables(); if (!els.length) return;
+  const curEl = document.activeElement;
+  if (curEl && curEl.type === 'range' && (dir === 'left' || dir === 'right')) {
+    const step = +curEl.step || .05; curEl.value = clamp(+curEl.value + (dir === 'right' ? step * 2 : -step * 2), +curEl.min, +curEl.max); curEl.dispatchEvent(new Event('input', { bubbles: true })); return;
+  }
+  let i = els.indexOf(curEl);
+  i = i < 0 ? 0 : (i + (dir === 'down' || dir === 'right' ? 1 : -1) + els.length) % els.length;
+  els[i].focus(); els[i].scrollIntoView({ block: 'nearest' });
+}
+function nearestAimTarget(maxAng) {
+  let best = null, ba = maxAng;
+  const fwd = new V3(); camera.getWorldDirection(fwd);
+  for (const e of enemies) {
+    if (e.dead || e.attract || e.rise > 0) continue;
+    const tp = e.root.position.clone(); tp.y += 1.25 * e.T.scale;
+    const to = tp.sub(camera.position); const d = to.length(); if (d > 70) continue;
+    const ang = Math.acos(clamp(to.normalize().dot(fwd), -1, 1));
+    if (ang < ba && (e.canSee || e.type === 'zombie')) { ba = ang; best = { e, dir: to, d }; }
+  }
+  return best;
+}
+function pollPad(dt) {
+  const g = getPad();
+  if (!g) return;
+  const B = i => !!g.buttons[i] && (g.buttons[i].pressed || g.buttons[i].value > .5);
+  const P = i => B(i) && !pad.prev[i];
+  const lx = padDZ(g.axes[0] || 0), ly = padDZ(g.axes[1] || 0), rx = padDZ(g.axes[2] || 0), ry = padDZ(g.axes[3] || 0);
+  const lt = g.buttons[6] ? g.buttons[6].value : 0, rt = g.buttons[7] ? g.buttons[7].value : 0;
+  const anyInput = Math.abs(lx) + Math.abs(ly) + Math.abs(rx) + Math.abs(ry) > 0 || lt > .2 || rt > .2 || g.buttons.some(b => b.pressed);
+  if (anyInput) setPadActive(true);
+  if (pad.active) {
+    if (state === 'playing') {
+      pad.lx = lx; pad.ly = ly;
+      // look: response curve, faster horizontally, slower while aiming down sights
+      const w = cw(), zoom = lerp(1, w.fov / 78, W.ads);
+      let sx = rx * Math.abs(rx) * 3.4, sy = ry * Math.abs(ry) * 2.3;
+      let slow = 1;
+      if (aimAssist && !player.dead) {
+        const t = nearestAimTarget(W.ads > .5 ? .09 : .05);
+        if (t) {
+          slow = W.ads > .5 ? .55 : .8;
+          if (W.ads > .5) {
+            const fwd = new V3(); camera.getWorldDirection(fwd);
+            const wantYaw = Math.atan2(-t.dir.x, -t.dir.z), wantPitch = Math.asin(clamp(t.dir.y, -1, 1));
+            let dyaw = wantYaw - player.yaw; while (dyaw > Math.PI) dyaw -= Math.PI * 2; while (dyaw < -Math.PI) dyaw += Math.PI * 2;
+            const pull = Math.min(1, dt * (Math.abs(rx) + Math.abs(ry) > .05 || Math.hypot(lx, ly) > .1 ? 2.2 : 1.2));
+            player.yaw += dyaw * pull; player.pitch += (wantPitch - (player.pitch + player.recoilP)) * pull * .6;
+          }
+        }
+      }
+      player.yaw -= sx * settings.sens * zoom * slow * dt;
+      player.pitch = clamp(player.pitch - sy * settings.sens * zoom * slow * dt, -1.5, 1.5);
+      W.mdx += sx * 8; W.mdy += sy * 8;
+      // triggers
+      const fire = rt > .3, ads = lt > .3;
+      if (fire !== pad.firing) { pad.firing = fire; mouse.l = fire; if (!fire) W.trigger = false; }
+      if (ads !== pad.aiming) { pad.aiming = ads; mouse.r = ads; }
+      // sprint toggle on L3, cancelled when the stick returns
+      if (P(10)) pad.sprint = !pad.sprint;
+      if (ly > -.5) pad.sprint = false;
+      if (P(0)) pressKey('Space');
+      if (P(1)) pressKey('KeyC');
+      if (P(2)) { if (gameMode === 'zombis' && Z.nearby) interact(); else startReload(); }
+      if (P(3)) cycleWeapon(1);
+      if (P(5)) throwGrenade();
+      if (P(4)) { if (gameMode === 'zombis') interact(); else { const s = STREAKS.find(s => streak.owned[s.id]); if (s) useStreak(s.id); } }
+      if (P(11)) melee();
+      if (P(12)) useStreak('uav');
+      if (P(14)) useStreak('air');
+      if (P(15)) useStreak('heli');
+      if (P(13)) { const i = slots[4]; if (i !== undefined) { prevW = cur; switchWeapon(i); } }
+      if (P(9)) pause();
+    } else {
+      pad.lx = pad.ly = 0;
+      pad.navT -= dt;
+      const dir = (B(12) || ly < -.5) ? 'up' : (B(13) || ly > .5) ? 'down' : (B(14) || lx < -.5) ? 'left' : (B(15) || lx > .5) ? 'right' : null;
+      if (dir && pad.navT <= 0) { padNav(dir); pad.navT = .2; }
+      if (!dir) pad.navT = 0;
+      if (P(0)) { const el = document.activeElement; if (el && el.tagName === 'BUTTON' && visibleScreen() && visibleScreen().contains(el)) el.click(); else padNav('down'); }
+      if (P(1)) { if (state === 'armory') $('ar-done').click(); else if (state === 'paused') $('resume').click(); }
+      if (P(9)) {
+        if (state === 'menu') $('play').click(); else if (state === 'paused') $('resume').click();
+        else if (state === 'dead') $('retry').click(); else if (state === 'won') $('endless').click();
+      }
+    }
+  }
+  pad.prev = g.buttons.map(b => b.pressed || b.value > .5);
+}
+
 function lockFailed() {
+  if (pad.active) return;
   $('lockmsg').textContent = 'No se pudo capturar el ratón. Espera un segundo y pulsa Continuar otra vez.';
   if (state === 'playing') pause();
 }
 function lock() {
-  if (lockFallback || touchMode) return;
+  if (lockFallback || touchMode || pad.active) return;
   $('lockmsg').textContent = '';
   const plain = () => {
     try { const r = canvas.requestPointerLock(); if (r && r.catch) { lockPromise = true; r.catch(lockFailed); } }
@@ -5200,6 +5328,16 @@ function renderMode() {
     : '15 oleadas de soldados con un jefe cada 5, rachas de bajas y chalecos antibalas.';
 }
 renderMode();
+function renderAA() {
+  const box = $('aasel');
+  if (!box.children.length) [['1', 'Activada'], ['0', 'Desactivada']].forEach(([v, name]) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'qb'; b.textContent = name; b.dataset.v = v;
+    b.addEventListener('click', () => { aimAssist = v === '1'; try { localStorage.setItem('tormenta-aimassist', v); } catch (e) {} renderAA(); });
+    box.appendChild(b);
+  });
+  [...box.children].forEach(b => b.setAttribute('aria-pressed', (b.dataset.v === '1') === aimAssist));
+}
+renderAA(); renderPadNote();
 function setSens(v) {
   settings.sens = clamp(+v || 1, .2, 3);
   for (const [i, o] of [['sens', 'sensv'], ['sens2', 'sensv2']]) { $(i).value = settings.sens; $(o).textContent = settings.sens.toFixed(2); }
@@ -5227,8 +5365,9 @@ function updatePlayer(dt) {
   }
   let analog = 1;
   if (tjoy.id !== null && !player.dead) { input.addScaledVector(fwd, -tjoy.y).addScaledVector(right, tjoy.x); analog = Math.min(1, Math.hypot(tjoy.x, tjoy.y) * 1.15); }
+  else if (pad.active && (pad.lx || pad.ly) && !player.dead) { input.addScaledVector(fwd, -pad.ly).addScaledVector(right, pad.lx); analog = Math.min(1, Math.hypot(pad.lx, pad.ly) * 1.1); }
   if (input.lengthSq() > 0) input.normalize();
-  const touchSprint = tjoy.id !== null && -tjoy.y > .85 && Math.hypot(tjoy.x, tjoy.y) > .95;
+  const touchSprint = (tjoy.id !== null && -tjoy.y > .85 && Math.hypot(tjoy.x, tjoy.y) > .95) || (pad.active && pad.sprint && pad.ly < -.5);
   const wantSprint = (((keys.ShiftLeft || keys.ShiftRight) && keys.KeyW && !keys.KeyS) || touchSprint) && !mouse.r && !(mouse.l && cs().mag > 0 && W.reloadT <= 0) && !player.dead;
   if (wantSprint && player.crouch && player.slideT <= 0) player.crouch = false;
   player.sprint = wantSprint && !player.crouch;
@@ -5554,7 +5693,9 @@ function simulate(dt) {
 }
 function frame() {
   requestAnimationFrame(frame);
-  simulate(Math.min(clock.getDelta(), .05));
+  const fdt = Math.min(clock.getDelta(), .05);
+  pollPad(fdt);
+  simulate(fdt);
   sun.position.copy(camera.position).addScaledVector(sunDir, 90); sun.target.position.copy(camera.position);
   sky.position.copy(camera.position);
   if (QUALITY[qIdx].post && composer) {
@@ -5580,7 +5721,7 @@ updateNades(); setWeaponHud();
 frame();
 
 // test hook (harmless in production)
-window.__tormenta = { get state() { return state; }, Z, interact, get gameMode() { return gameMode; }, vmGuns, W, waveState, startWave, rockets, get cur() { return cur; }, get wstate() { return wstate; }, slots, vests, spawnVest, freeSpot, streak, useStreak, get heli() { return heli; }, scene, wScene, player, loadMap, clearWorld, placeAttract, enemies, stats, startGame, keys, mouse, run(sec) { for (let i = 0; i < sec * 60; i++) { scene.updateMatrixWorld(); simulate(1 / 60); } } };
+window.__tormenta = { get state() { return state; }, pad, pollPad, Z, interact, get gameMode() { return gameMode; }, vmGuns, W, waveState, startWave, rockets, get cur() { return cur; }, get wstate() { return wstate; }, slots, vests, spawnVest, freeSpot, streak, useStreak, get heli() { return heli; }, scene, wScene, player, loadMap, clearWorld, placeAttract, enemies, stats, startGame, keys, mouse, run(sec) { for (let i = 0; i < sec * 60; i++) { scene.updateMatrixWorld(); simulate(1 / 60); } } };
 })();
 </script>
 </body>
