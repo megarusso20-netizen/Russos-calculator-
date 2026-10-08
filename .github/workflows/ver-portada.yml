@@ -1,0 +1,17 @@
+name: Ver portada de Play Korsou
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ver:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar la portada actual
+        run: |
+          curl -sS https://playkorsou.web.app/ -o portada.html
+          wc -c portada.html
+          echo "----- scripts, enlaces y llamadas a Firebase -----"
+          grep -oE '(src|href)="[^"]*"|firebase[A-Za-z.]*\([^)]{0,80}|location\.[a-z]+[^;]{0,60}|signIn[A-Za-z]*' portada.html | sort | uniq -c | head -120
+          echo "----- primeros 6000 caracteres -----"
+          head -c 6000 portada.html
