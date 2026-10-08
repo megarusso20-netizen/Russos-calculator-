@@ -45,7 +45,8 @@ try {
 
 if (MODE !== 'publicar') { console.log('Modo inspeccionar: no se ha cambiado nada.'); process.exit(0); }
 
-const index = files.find(f => f.path === '/index.html');
+const ala = files.find(f => f.path === '/ala-azul.html');
+const index = ala || files.find(f => f.path === '/index.html');
 if (!index) throw new Error('No hay /index.html en el sitio; no lo toco.');
 const add = { '/index.html': 'playkorsou/index.html', '/tormenta/index.html': 'playkorsou/tormenta/index.html' };
 const hashes = { '/ala-azul.html': index.hash }, blobs = {};
@@ -68,8 +69,11 @@ for (const h of pop.uploadRequiredHashes || []) {
 // single-page-app rewrites that pointed at /index.html now point at Ala Azul's page
 const cfg = JSON.parse(JSON.stringify(live.version.config || {}));
 let changed = false;
+// pages must always be revalidated so visitors see the new home page instead of a cached copy
+cfg.headers = cfg.headers || [];
+if (!cfg.headers.some(h => h.headers && h.headers['Cache-Control'])) { cfg.headers.push({ glob: '**', headers: { 'Cache-Control': 'no-cache' } }); changed = true; }
 for (const rw of cfg.rewrites || []) if (rw.path === '/index.html') { rw.path = '/ala-azul.html'; changed = true; }
-if (changed) { await call('PATCH', `/${newVer}?update_mask=config`, { config: cfg }); console.log('Reglas de reescritura ajustadas a /ala-azul.html'); }
+if (changed) { await call('PATCH', `/${newVer}?update_mask=config`, { config: cfg }); console.log('Configuración actualizada (caché / reescrituras)'); }
 await call('PATCH', `/${newVer}?update_mask=status`, { status: 'FINALIZED' });
 const done = await call('POST', `/sites/${SITE}/releases?versionName=${encodeURIComponent(newVer)}`, { message: 'Ala Azul + Tormenta del Desierto' });
 console.log('Publicado:', done.name, '-> https://' + SITE + '.web.app/');

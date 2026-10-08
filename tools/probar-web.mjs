@@ -6,6 +6,7 @@ fs.mkdirSync('capturas', { recursive: true });
 const BASE = 'https://playkorsou.web.app';
 const report = [];
 const log = (...a) => { const l = a.join(' '); console.log(l); report.push(l); };
+fs.writeFileSync('capturas/ala-azul.html', await (await fetch(BASE + '/ala-azul')).text());
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 for (const [dev, opts] of [['pc', { viewport: { width: 1280, height: 760 } }], ['movil', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }]]) {
   const ctx = await browser.newContext(opts);
