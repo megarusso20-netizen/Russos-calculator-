@@ -1,0 +1,30 @@
+===== pc =====
+portada 200 Play Korsou | cache-control: no-cache
+botones: [["Juego 1 Ala Azul El primer juego de Play","/ala-azul"],["Juego 2 · Shooter en primera persona Tor","/tormenta/"]]
+ala azul -> https://playkorsou.web.app/ala-azul | Ala Azul
+  botones visibles: ["🔊","TIENDA PK","🔐 ENTRAR CON GOOGLE","TOCA PARA VOLAR"]
+  botón ‹ JUEGOS: sí
+  al pulsarlo -> https://playkorsou.web.app/ | Play Korsou
+  no se pudo pulsar empezar: elementHandle.click: Timeout 30000ms exceeded.
+Call log:
+  - attempting click ac
+  después de pulsar: https://playkorsou.web.app/ala-azul
+  errores: ninguno
+tormenta -> https://playkorsou.web.app/tormenta/ | Operación Tormenta | volver visible: true
+  estado: playing
+  errores: ninguno
+===== movil =====
+portada 200 Play Korsou | cache-control: no-cache
+botones: [["Juego 1 Ala Azul El primer juego de Play","/ala-azul"],["Juego 2 · Shooter en primera persona Tor","/tormenta/"]]
+ala azul -> https://playkorsou.web.app/ala-azul | Ala Azul
+  botones visibles: ["🔊","TIENDA PK","🔐 ENTRAR CON GOOGLE","TOCA PARA VOLAR"]
+  botón ‹ JUEGOS: sí
+  al pulsarlo -> https://playkorsou.web.app/ | Play Korsou
+  no se pudo pulsar empezar: elementHandle.click: Timeout 30000ms exceeded.
+Call log:
+  - attempting click ac
+  después de pulsar: https://playkorsou.web.app/ala-azul
+  errores: ninguno
+tormenta -> https://playkorsou.web.app/tormenta/ | Operación Tormenta | volver visible: true
+  estado: playing
+  errores: ninguno
