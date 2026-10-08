@@ -2,6 +2,9 @@ name: Ver portada de Play Korsou
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/ver-portada.yml
 
 jobs:
   ver:
