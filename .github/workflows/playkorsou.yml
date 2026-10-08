@@ -1,0 +1,26 @@
+name: Play Korsou (Firebase Hosting)
+
+on:
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "inspeccionar (solo mira) o publicar (sube los dos juegos)"
+        required: true
+        default: inspeccionar
+        type: choice
+        options: [inspeccionar, publicar]
+
+jobs:
+  hosting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Firebase Hosting
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PLAYKORSOU }}
+          MODE: ${{ inputs.modo }}
+          SITE: playkorsou
+        run: node tools/playkorsou.mjs
